@@ -87,7 +87,7 @@ public class Offre {
 		FindIterable<org.bson.Document> dc = db.getCollection("Offre").find();
 		for(org.bson.Document d: dc) {
 			Offre of = new Offre();
-			of.setIdOffre((int)d.get("_id"));
+			of.setIdOffre((int)d.get("idOffre"));
 			of.setNom((String)d.get("nom"));
 			of.setPrix((double)d.get("prix"));
 			
@@ -126,12 +126,12 @@ public class Offre {
 		MongoClient client = config.mongoClient();
 		MongoDatabase db = client.getDatabase("TelmaMongo");
 		org.bson.Document doc = new org.bson.Document();
-		doc.append("_id", id);
+		doc.append("idOffre", id);
 		
 		FindIterable<org.bson.Document> dc = db.getCollection("Offre").find(doc);
 		for(org.bson.Document d: dc) {
 			Offre of = new Offre();
-			of.setIdOffre((int)d.get("_id"));
+			of.setIdOffre((int)d.get("idOffre"));
 			of.setNom((String)d.get("nom"));
 			of.setPrix((double)d.get("prix"));
 			

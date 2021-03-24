@@ -4,6 +4,7 @@ alter database telma owner to postgres;
 
 \c telma
 
+-- Creation des tables
 create table utilisateur(
     idUtilisateur serial primary key,
     numeroTelephone varchar(200),
@@ -20,66 +21,88 @@ create table token(
     foreign key(idUtilisateur) references utilisateur(idUtilisateur)
 );
 
-create table test(
-    id int,
-    nom varchar(50)    
-);
-insert into test values (1,'Rakoto');
-
----Mongo
-/*CREATE TABLE TypeOffre (
-    idTypeOffre serial primary key,
-    nom VARCHAR(50)
-);
-
----Mongo
-CREATE TABLE Unite (
-    idUnite serial primary key,
-    nom VARCHAR(50)
-);
-
----Mongo
-CREATE TABLE TypeDuree (
-    idTypeDuree serial primary key,
-    nom VARCHAR(50),
-    valeur INTEGER,
-    idUnite INTEGER,
-    foreign key (idUnite) references Unite(idUnite)
+create table categorie(
+    idCategorie serial primary key,
+    duration varchar(50), -- hebd , mens , annuel
+    duree int
 );
 
 CREATE TABLE Offre (
     idOffre serial primary key,
     nom VARCHAR(60),
     prix DOUBLE PRECISION,
-    idTypeOffre INTEGER,
-    idTypeDuree INTEGER,
-    Foreign key (idTypeDuree) references TypeDuree(idTypeDuree),
-    Foreign key (idTypeOffre) references TypeOffre(idOffre)
+    idCategorie integer,
+    foreign key (idCategorie) references Categorie(idCategorie)
 );
-
 
 CREATE TABLE DetailOffre (
     idDetailOffre serial primary key,
     idOffre INTEGER,
-    intervalleP Time,
-    intervalleD Time,
+    typeOffre VARCHAR,
     valeur DOUBLE PRECISION,
-    idUnite INTEGER,
     mop INTEGER,
     aop INTEGER,
     international INTEGER,
     siteSpecifique VARCHAR(20),
-    foreign key (idUnite) references Unite(idOffre),
     foreign key (idOffre) references Offre(idOffre)
 );
----Mongo
+
 CREATE TABLE Credit(
     minimum double PRECISION,
-    mop integer,
-    aop integer,
+    prixSms double PRECISION,   -- par 1sms
+    prixMega double PRECISION, -- par 1mo
+    mop integer,   -- 4
+    aop integer,    -- 8
     international integer
-);/*
-*/
+);
+
+insert into credit values (200,5,10,4,8,20);
+
+-- -----------------------------------------------
+
+-- Donnees de test Offre:
+
+-- Categorie : 
+
+insert into Categorie(duration, duree) values ('journalier',1);
+insert into Categorie(duration, duree) values ('mensuel',30);
+insert into Categorie(duration, duree) values ('hebdomadaire',7);
+
+--  Offre Mora:
+insert into Offre(nom, prix, idCategorie) values ('Mora', 1000, 1);
+insert into DetailOffre(idOffre,typeOffre,valeur,siteSpecifique) values (1,'internet',50,'internet');
+insert into DetailOffre(idOffre,typeOffre,valeur,mop,aop,international) values (1,'appel',1000,1,3,10);
+insert into DetailOffre(idOffre,typeOffre,valeur) values (1,'sms',50);
+
+-- Offre facebobaka
+insert into Offre(nom, prix, idCategorie) values ('Facebobaka', 500, 3);
+insert into DetailOffre(idOffre,typeOffre,valeur,siteSpecifique) values (2,'internet',1000,'facebook');
+
+create or replace view v_offreDetailed as
+select o.* , c.duration,  c.duree , d.typeOffre, d.valeur, d.mop , d.aop, d.international from offre o join categorie c on o.idCategorie = c.idCategorie join detailOffre d on d.idOffre = o.idOffre;
+
+-- Vue date expiration offre :
+create or replace view v_mouvementOffre as 
+select mo.idUtilisateur, mo.idMouvementOffre,mo.idOffre , mo.dateMouvementOffre as dateDebut, v_offreDetailed.duree,
+case 
+    when duree = 1 then mo.dateMouvementOffre::date 
+    when duree = 7 then mo.dateMouvementOffre::date + integer '7'
+    when duree = 30 then mo.dateMouvementOffre::date + integer '30'
+end as dateExpiration,
+'23:59'::time as TimeExpiration
+from MouvementOffre mo join v_offreDetailed on v_offreDetailed.idOffre = mo.idOffre;
+
+-- Consomation
+
+create table consomation(
+    idMouvementOffre int,
+    valeur double PRECISION,
+    typeOffre varchar,
+    foreign key(idMouvementOffre) references MouvementOffre(idMouvementOffre)
+);
+
+-- Les mouvements :
+
 CREATE TABLE MouvementMC (
     idMouvementMC serial primary key,
     idUtilisateur INTEGER,
@@ -99,9 +122,16 @@ CREATE TABLE MouvementOffre (
     idMouvementOffre serial primary key,
     idUtilisateur INTEGER,
     idOffre INTEGER,
-    dateMouvementOffre Timestamp,
-    foreign key (idUtilisateur) references Utilisateur(idUtilisateur)
+    dateMouvementOffre Timestamp, -- 
+    foreign key (idUtilisateur) references Utilisateur(idUtilisateur),
+    foreign key (idOffre) references Offre(idOffre)
+    
 );
+
+insert into MouvementOffre(idUtilisateur, idOffre,dateMouvementOffre) values (17,1,'24-03-2021 08:00:00');
+insert into MouvementOffre(idUtilisateur, idOffre,dateMouvementOffre) values (17,2,'24-03-2021 10:00:00');
+
+
 
 CREATE TABLE MouvementMA (
     idMouvementMA serial primary key,
@@ -111,11 +141,12 @@ CREATE TABLE MouvementMA (
     destinataire VARCHAR(100), -- Soit site , soit numero
     typeMouvementMA VARCHAR(10), -- Appel ou Mega
     idOffre int,
-    foreign key (idUtilisateur) references Utilisateur(idUtilisateur)                                                           ---( mega , appel )
+    foreign key (idUtilisateur) references Utilisateur(idUtilisateur)                                                          ---( mega , appel )
 );
 
+
 insert into MouvementMA (idUtilisateur, dateMouvementMA, duree,destinataire,typeMouvementMA,idOffre) 
-    values (17,'2021-03-18 16:11:52','4','0348766709','appel',1);
+    values (1,'2021-03-18 16:11:52','4','0348766709','appel',1);
 -- raha sady niala ny facebobaka sady niala ny yelow dia 2 ny MouvementMA insert 
 
 create table operateur(
@@ -124,9 +155,11 @@ create table operateur(
     initial varchar(10)
 );
 
-insert into operateur (nomOperateur, intial) values ('Telma','034');
+insert into operateur (nomOperateur, initial) values ('Telma','034');
 
-
+-- --------------------------------------------------
+create or replace view v_user_token as
+select u.* , t.tokenValue from utilisateur u join token t on u.idUtilisateur = t.idToken;
 
 
 -- ---------------VIEW ------------------------------
@@ -171,7 +204,23 @@ create or replace view v_MvolaRetrait as
     select  idUtilisateur , sum(montant) as MvolaRetrait from MouvementMC where typeMouvementMC = 'mvola' and typeTransaction = 'retrait' group by idUtilisateur;
 
 create or replace view v_soldeMvola as
-select md.idUtilisateur, (coalesce(sum(md.MvolaDepot))- coalesce(sum(mr.MvolaRetrait), 0)) as mvola
+select u.idUtilisateur, (coalesce(sum(md.MvolaDepot),0)- coalesce(sum(mr.MvolaRetrait), 0)) as mvola
 from v_MvolaDepot md 
-left join v_MvolaRetrait mr on md.idUtilisateur = mr.idUtilisateur 
-group by md.idUtilisateur;
+left join v_MvolaRetrait mr on md.idUtilisateur = mr.idUtilisateur right join utilisateur u on md.idUtilisateur = u.idUtilisateur
+group by u.idUtilisateur;
+
+-------------------------------------------------------------------
+
+-- Kiady
+
+CREATE or REPLACE VIEW V_MouvementMVola as 
+select   MouvementMC.* ,utilisateur.nom
+from MouvementMC join utilisateur on utilisateur.idutilisateur=MouvementMC.idutilisateur 
+where typeMouvementMC='mvola' ;
+
+create or replace view demandedepot as
+select V_MouvementMVola.*
+from V_MouvementMVola
+where dateAcceptation is null order by datemouvementmc desc;
+
+CREATE Sequence seq_idoffre ;

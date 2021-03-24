@@ -50,12 +50,14 @@ public class Main {
 			System.out.println(d.get("prix"));
 			System.out.println(((org.bson.Document) d.get("categorie")).get("typeOffre"));
 		}*/
-		Connection con = DBConnect.getConnectionPostgres();
-		double monCredit = Utilisateur.getMonSoldeMvola(17 , con);
-		System.out.print(monCredit);
+		 Connection con = DBConnect.getConnectionPostgres();
+		double monSolde = Utilisateur.getMonSoldeMvola(1 , con);
+		System.out.print("Mon solde:"+monSolde);
 		/*double prix = Offre.getOffreById(1).getPrix();
 		System.out.print(prix);*/
 		//Offre.achatOffreViaCredit(Offre.getOffreById(1) , 17, "2021-03-20 08:00:00");
+		Offre o = Offre.getOffreById(3);
+		System.out.println("Prix offre:"+o.getPrix());
 	}
 
 }

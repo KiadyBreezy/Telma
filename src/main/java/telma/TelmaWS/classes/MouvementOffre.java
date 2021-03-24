@@ -11,6 +11,7 @@ public class MouvementOffre {
 	int idUtilisateur;
 	int idOffre;
 	Date dateMouvement;
+	
 	public MouvementOffre(int idMouvementOffre, int idUtilisateur, int idOffre, Date dateMouvement) {
 		super();
 		this.idMouvementOffre = idMouvementOffre;
@@ -53,7 +54,7 @@ public class MouvementOffre {
 	       String sql = "insert into MouvementOffre (idUtilisateur, idOffre, dateMouvementOffre) values(? , ? , ?)";
 	       st = con.prepareStatement(sql);
 	       st.setInt(1, idUtilisateur);
-	       st.setDouble(2, idOffre);
+	       st.setDouble(2, idOffre); 
 	       st.setTimestamp(3, Timestamp.valueOf(dateMouvementOffre));
 	       st.execute(); 
 	     } catch (Exception e) {
